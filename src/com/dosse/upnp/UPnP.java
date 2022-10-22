@@ -66,47 +66,49 @@ public class UPnP {
     /**
      * Opens a TCP port on the gateway
      * 
-     * @param port TCP port (0-65535)
+     * @param internalPort TCP port (0-65535)
+     * @param externalPort TCP port (0-65535)
      * @return true if the operation was successful, false otherwise
      */
-    public static boolean openPortTCP(int port) {
+    public static boolean openPortTCP(String name, int leaseDuration, int internalPort, int externalPort) {
         if(!isUPnPAvailable()) return false;
-        return defaultGW.openPort(port, false);
+        return defaultGW.openPort(name, leaseDuration, internalPort, externalPort, false);
     }
     
     /**
      * Opens a UDP port on the gateway
      * 
-     * @param port UDP port (0-65535)
+     * @param internalPort UDP port (0-65535)
+     * @param externalPort UDP port (0-65535)
      * @return true if the operation was successful, false otherwise
      */
-    public static boolean openPortUDP(int port) {
+    public static boolean openPortUDP(String name, int leaseDuration, int internalPort, int externalPort) {
         if(!isUPnPAvailable()) return false;
-        return defaultGW.openPort(port, true);
+        return defaultGW.openPort(name, leaseDuration, internalPort, externalPort, true);
     }
     
     /**
      * Closes a TCP port on the gateway<br>
      * Most gateways seem to refuse to do this
      * 
-     * @param port TCP port (0-65535)
+     * @param externalPort TCP port (0-65535)
      * @return true if the operation was successful, false otherwise
      */
-    public static boolean closePortTCP(int port) {
+    public static boolean closePortTCP(int externalPort) {
         if(!isUPnPAvailable()) return false;
-        return defaultGW.closePort(port, false);
+        return defaultGW.closePort(externalPort, false);
     }
     
     /**
      * Closes a UDP port on the gateway<br>
      * Most gateways seem to refuse to do this
      * 
-     * @param port UDP port (0-65535)
+     * @param externalPort UDP port (0-65535)
      * @return true if the operation was successful, false otherwise
      */
-    public static boolean closePortUDP(int port) {
+    public static boolean closePortUDP(int externalPort) {
         if(!isUPnPAvailable()) return false;
-        return defaultGW.closePort(port, true);
+        return defaultGW.closePort(externalPort, true);
     }
     
     /**

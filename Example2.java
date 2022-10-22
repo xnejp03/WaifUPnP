@@ -1,3 +1,5 @@
+import com.dosse.upnp.UPnP;
+
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -34,7 +36,7 @@ public class Example2 {
             if (UPnP.isUPnPAvailable()) { //is UPnP available?
                 if (UPnP.isMappedTCP(PORT)) { //is the port already mapped?
                     System.out.println("UPnP port forwarding not enabled: port is already mapped");
-                } else if (UPnP.openPortTCP(PORT)) { //try to map port
+                } else if (UPnP.openPortTCP("test2", 30, PORT, PORT)) { //try to map port
                     System.out.println("UPnP port forwarding enabled");
                 } else {
                     System.out.println("UPnP port forwarding failed");

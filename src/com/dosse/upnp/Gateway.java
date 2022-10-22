@@ -18,6 +18,14 @@
  */
 package com.dosse.upnp;
 
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.w3c.dom.traversal.DocumentTraversal;
+import org.w3c.dom.traversal.NodeFilter;
+import org.w3c.dom.traversal.NodeIterator;
+
+import javax.xml.parsers.DocumentBuilderFactory;
 import java.net.HttpURLConnection;
 import java.net.Inet4Address;
 import java.net.InetAddress;
@@ -25,13 +33,6 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
-import javax.xml.parsers.DocumentBuilderFactory;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.w3c.dom.traversal.DocumentTraversal;
-import org.w3c.dom.traversal.NodeFilter;
-import org.w3c.dom.traversal.NodeIterator;
 
 /**
  * 
@@ -150,19 +151,22 @@ class Gateway {
         }
     }
 
-    public boolean openPort(int port, boolean udp) {
-        if (port < 0 || port > 65535) {
-            throw new IllegalArgumentException("Invalid port");
+    public boolean openPort(String name, int leaseDuration, int internalPort, int externalPort, boolean udp) {
+        if (internalPort < 0 || internalPort > 65535) {
+            throw new IllegalArgumentException("Invalid internalPort port");
+        }
+        if (externalPort < 0 || externalPort > 65535) {
+            throw new IllegalArgumentException("Invalid externalPort port");
         }
         Map<String, String> params = new HashMap<String, String>();
         params.put("NewRemoteHost", "");
         params.put("NewProtocol", udp ? "UDP" : "TCP");
         params.put("NewInternalClient", iface.getHostAddress());
-        params.put("NewExternalPort", "" + port);
-        params.put("NewInternalPort", "" + port);
+        params.put("NewExternalPort", "" + externalPort);
+        params.put("NewInternalPort", "" + internalPort);
         params.put("NewEnabled", "1");
-        params.put("NewPortMappingDescription", "WaifUPnP");
-        params.put("NewLeaseDuration", "0");
+        params.put("NewPortMappingDescription", name);
+        params.put("NewLeaseDuration", String.valueOf(leaseDuration));
         try {
             Map<String, String> r = command("AddPortMapping", params);
             return r.get("errorCode") == null;
@@ -171,14 +175,14 @@ class Gateway {
         }
     }
 
-    public boolean closePort(int port, boolean udp) {
-        if (port < 0 || port > 65535) {
-            throw new IllegalArgumentException("Invalid port");
+    public boolean closePort(int externalPort, boolean udp) {
+        if (externalPort < 0 || externalPort > 65535) {
+            throw new IllegalArgumentException("Invalid externalPort");
         }
         Map<String, String> params = new HashMap<String, String>();
         params.put("NewRemoteHost", "");
         params.put("NewProtocol", udp ? "UDP" : "TCP");
-        params.put("NewExternalPort", "" + port);
+        params.put("NewExternalPort", "" + externalPort);
         try {
             command("DeletePortMapping", params);
             return true;
@@ -187,14 +191,14 @@ class Gateway {
         }
     }
 
-    public boolean isMapped(int port, boolean udp) {
-        if (port < 0 || port > 65535) {
+    public boolean isMapped(int externalPort, boolean udp) {
+        if (externalPort < 0 || externalPort > 65535) {
             throw new IllegalArgumentException("Invalid port");
         }
         Map<String, String> params = new HashMap<String, String>();
         params.put("NewRemoteHost", "");
         params.put("NewProtocol", udp ? "UDP" : "TCP");
-        params.put("NewExternalPort", "" + port);
+        params.put("NewExternalPort", "" + externalPort);
         try {
             Map<String, String> r = command("GetSpecificPortMappingEntry", params);
             if (r.get("errorCode") != null) {
