@@ -18,6 +18,12 @@
  */
 package com.dosse.upnp;
 
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.util.Enumeration;
+import java.util.LinkedList;
+
 /**
  * This class contains static methods that allow quick access to UPnP Port Mapping.<br>
  * Commands will be sent to the default gateway.
@@ -26,23 +32,31 @@ package com.dosse.upnp;
  */
 public class UPnP {
 
-    private static Gateway defaultGW = null;
-    private static final GatewayFinder finder = new GatewayFinder() {
-        @Override
-        public void gatewayFound(Gateway g) {
-            synchronized (finder) {
-                if (defaultGW == null) {
-                    defaultGW = g;
+    private final InetAddress ip;
+
+    private Gateway defaultGW = null;
+    private final GatewayFinder finder;
+
+    public UPnP(InetAddress ip) {
+        this.ip = ip;
+
+        finder = new GatewayFinder(ip) {
+            @Override
+            public void gatewayFound(Gateway g) {
+                synchronized (finder) {
+                    if (defaultGW == null) {
+                        defaultGW = g;
+                    }
                 }
             }
-        }
-    };
+        };
+    }
 
     /**
      * Waits for UPnP to be initialized (takes ~3 seconds).<br>
      * It is not necessary to call this method manually before using UPnP functions
      */
-    public static void waitInit() {
+    public void waitInit() {
         while (finder.isSearching()) {
             try {
                 Thread.sleep(1);
@@ -58,7 +72,7 @@ public class UPnP {
      * 
      * @return true if available, false if not
      */
-    public static boolean isUPnPAvailable(){
+    public boolean isUPnPAvailable(){
         waitInit();
         return defaultGW!=null;
     }
@@ -70,7 +84,7 @@ public class UPnP {
      * @param externalPort TCP port (0-65535)
      * @return true if the operation was successful, false otherwise
      */
-    public static boolean openPortTCP(String name, int leaseDuration, int internalPort, int externalPort) {
+    public boolean openPortTCP(String name, int leaseDuration, int internalPort, int externalPort) {
         if(!isUPnPAvailable()) return false;
         return defaultGW.openPort(name, leaseDuration, internalPort, externalPort, false);
     }
@@ -82,7 +96,7 @@ public class UPnP {
      * @param externalPort UDP port (0-65535)
      * @return true if the operation was successful, false otherwise
      */
-    public static boolean openPortUDP(String name, int leaseDuration, int internalPort, int externalPort) {
+    public boolean openPortUDP(String name, int leaseDuration, int internalPort, int externalPort) {
         if(!isUPnPAvailable()) return false;
         return defaultGW.openPort(name, leaseDuration, internalPort, externalPort, true);
     }
@@ -94,7 +108,7 @@ public class UPnP {
      * @param externalPort TCP port (0-65535)
      * @return true if the operation was successful, false otherwise
      */
-    public static boolean closePortTCP(int externalPort) {
+    public boolean closePortTCP(int externalPort) {
         if(!isUPnPAvailable()) return false;
         return defaultGW.closePort(externalPort, false);
     }
@@ -106,7 +120,7 @@ public class UPnP {
      * @param externalPort UDP port (0-65535)
      * @return true if the operation was successful, false otherwise
      */
-    public static boolean closePortUDP(int externalPort) {
+    public boolean closePortUDP(int externalPort) {
         if(!isUPnPAvailable()) return false;
         return defaultGW.closePort(externalPort, true);
     }
@@ -117,7 +131,7 @@ public class UPnP {
      * @param port TCP port (0-65535)
      * @return true if the port is mapped, false otherwise
      */
-    public static boolean isMappedTCP(int port) {
+    public boolean isMappedTCP(int port) {
         if(!isUPnPAvailable()) return false;
         return defaultGW.isMapped(port, false);
     }
@@ -128,7 +142,7 @@ public class UPnP {
      * @param port UDP port (0-65535)
      * @return true if the port is mapped, false otherwise
      */
-    public static boolean isMappedUDP(int port) {
+    public boolean isMappedUDP(int port) {
         if(!isUPnPAvailable()) return false;
         return defaultGW.isMapped(port, true);
     }
@@ -138,7 +152,7 @@ public class UPnP {
      * 
      * @return external IP address as string, or null if not available
      */
-    public static String getExternalIP(){
+    public String getExternalIP(){
         if(!isUPnPAvailable()) return null;
         return defaultGW.getExternalIP();
     }
@@ -148,7 +162,7 @@ public class UPnP {
      * 
      * @return internal IP address as string, or null if not available
      */
-    public static String getLocalIP(){
+    public String getLocalIP(){
         if(!isUPnPAvailable()) return null;
         return defaultGW.getLocalIP();
     }
@@ -158,9 +172,37 @@ public class UPnP {
      *
      * @return internal IP address as string, or null if not available
      */
-    public static String getDefaultGatewayIP(){
+    public String getDefaultGatewayIP(){
         if(!isUPnPAvailable()) return null;
         return defaultGW.getGatewayIP();
+    }
+
+    public static Inet4Address[] getLocalIPs() {
+        LinkedList<Inet4Address> ret = new LinkedList<Inet4Address>();
+        try {
+            Enumeration<NetworkInterface> ifaces = NetworkInterface.getNetworkInterfaces();
+            while (ifaces.hasMoreElements()) {
+                try {
+                    NetworkInterface iface = ifaces.nextElement();
+                    if (!iface.isUp() || iface.isLoopback() || iface.isVirtual() || iface.isPointToPoint() || iface.getDisplayName().toLowerCase().contains("virtual")) {
+                        continue;
+                    }
+                    Enumeration<InetAddress> addrs = iface.getInetAddresses();
+                    if (addrs == null) {
+                        continue;
+                    }
+                    while (addrs.hasMoreElements()) {
+                        InetAddress addr = addrs.nextElement();
+                        if (addr instanceof Inet4Address) {
+                            ret.add((Inet4Address) addr);
+                        }
+                    }
+                } catch (Throwable t) {
+                }
+            }
+        } catch (Throwable t) {
+        }
+        return ret.toArray(new Inet4Address[]{});
     }
 
 }

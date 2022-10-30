@@ -33,10 +33,11 @@ public class Example2 {
             }.start();
             //meanwhile, we try to open the port on the local gateway
             System.out.println("Attempting UPnP port forwarding...");
-            if (UPnP.isUPnPAvailable()) { //is UPnP available?
-                if (UPnP.isMappedTCP(PORT)) { //is the port already mapped?
+            UPnP uPnP = new UPnP(UPnP.getLocalIPs()[0]);
+            if (uPnP.isUPnPAvailable()) { //is UPnP available?
+                if (uPnP.isMappedTCP(PORT)) { //is the port already mapped?
                     System.out.println("UPnP port forwarding not enabled: port is already mapped");
-                } else if (UPnP.openPortTCP("test2", 30, PORT, PORT)) { //try to map port
+                } else if (uPnP.openPortTCP("test2", 30, PORT, PORT)) { //try to map port
                     System.out.println("UPnP port forwarding enabled");
                 } else {
                     System.out.println("UPnP port forwarding failed");

@@ -46,10 +46,10 @@ abstract class GatewayFinder {
 
     private class GatewayListener extends Thread {
 
-        private Inet4Address ip;
+        private InetAddress ip;
         private String req;
 
-        public GatewayListener(Inet4Address ip, String req) {
+        public GatewayListener(InetAddress ip, String req) {
             setName("WaifUPnP - Gateway Listener");
             this.ip = ip;
             this.req = req;
@@ -89,13 +89,11 @@ abstract class GatewayFinder {
 
     private LinkedList<GatewayListener> listeners = new LinkedList<GatewayListener>();
 
-    public GatewayFinder() {
-        for (Inet4Address ip : getLocalIPs()) {
-            for (String req : SEARCH_MESSAGES) {
-                GatewayListener l = new GatewayListener(ip, req);
-                l.start();
-                listeners.add(l);
-            }
+    public GatewayFinder(InetAddress ip) {
+        for (String req : SEARCH_MESSAGES) {
+            GatewayListener l = new GatewayListener(ip, req);
+            l.start();
+            listeners.add(l);
         }
     }
 
@@ -110,32 +108,5 @@ abstract class GatewayFinder {
 
     public abstract void gatewayFound(Gateway g);
 
-    private static Inet4Address[] getLocalIPs() {
-        LinkedList<Inet4Address> ret = new LinkedList<Inet4Address>();
-        try {
-            Enumeration<NetworkInterface> ifaces = NetworkInterface.getNetworkInterfaces();
-            while (ifaces.hasMoreElements()) {
-                try {
-                    NetworkInterface iface = ifaces.nextElement();
-                    if (!iface.isUp() || iface.isLoopback() || iface.isVirtual() || iface.isPointToPoint()) {
-                        continue;
-                    }
-                    Enumeration<InetAddress> addrs = iface.getInetAddresses();
-                    if (addrs == null) {
-                        continue;
-                    }
-                    while (addrs.hasMoreElements()) {
-                        InetAddress addr = addrs.nextElement();
-                        if (addr instanceof Inet4Address) {
-                            ret.add((Inet4Address) addr);
-                        }
-                    }
-                } catch (Throwable t) {
-                }
-            }
-        } catch (Throwable t) {
-        }
-        return ret.toArray(new Inet4Address[]{});
-    }
 
 }
